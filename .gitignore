@@ -5,5 +5,3 @@
 .vscode/ipch
 
 .idea
-
-src/config.cpp
