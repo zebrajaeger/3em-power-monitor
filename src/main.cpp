@@ -41,7 +41,6 @@ void drawL3(const char* text);
 void drawTime(struct tm* time);
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 void mqttReconnect();
-void printLocalTime();
 void drawEnergy(float e);
 
 void setup() {
@@ -212,13 +211,4 @@ void mqttReconnect() {
       delay(5000);
     }
   }
-}
-
-void printLocalTime() {
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to obtain time 1");
-    return;
-  }
-  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S zone %Z %z ");
 }
