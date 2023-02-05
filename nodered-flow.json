@@ -1,0 +1,305 @@
+[
+    {
+        "id": "839a687ef61ecc3f",
+        "type": "tab",
+        "label": "Shelly 3EM",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "6b8db69fb74c45ad",
+        "type": "inject",
+        "z": "839a687ef61ecc3f",
+        "name": "Intervall Trigger",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payloadType": "date",
+        "x": 320,
+        "y": 160,
+        "wires": [
+            [
+                "1ef9a61469e5bad4"
+            ]
+        ]
+    },
+    {
+        "id": "1ef9a61469e5bad4",
+        "type": "http request",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://192.168.178.60/status",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 540,
+        "y": 240,
+        "wires": [
+            [
+                "0a6e4c199849987d",
+                "d0e4fb318fdc1e32",
+                "22533adda22cb607",
+                "280aaf872bafe5e9",
+                "8ffbd38645c71fa2",
+                "86fa6f4367498077"
+            ]
+        ]
+    },
+    {
+        "id": "0a6e4c199849987d",
+        "type": "mqtt out",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "topic": "3em/status",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "1eb1ab4af1d9e0fd",
+        "x": 1010,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "bc014f36a59bd89b",
+        "type": "mqtt out",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "topic": "3em/l1",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "1eb1ab4af1d9e0fd",
+        "x": 990,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "d0e4fb318fdc1e32",
+        "type": "function",
+        "z": "839a687ef61ecc3f",
+        "name": "Extract L1",
+        "func": "\nreturn {payload:msg.payload.emeters[0]}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 340,
+        "wires": [
+            [
+                "bc014f36a59bd89b"
+            ]
+        ]
+    },
+    {
+        "id": "226050ddb62f6734",
+        "type": "mqtt out",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "topic": "3em/l2",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "1eb1ab4af1d9e0fd",
+        "x": 990,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "22533adda22cb607",
+        "type": "function",
+        "z": "839a687ef61ecc3f",
+        "name": "Extract L2",
+        "func": "\nreturn {payload:msg.payload.emeters[1]}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 400,
+        "wires": [
+            [
+                "226050ddb62f6734"
+            ]
+        ]
+    },
+    {
+        "id": "2930294d93e9be7d",
+        "type": "mqtt out",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "topic": "3em/l3",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "1eb1ab4af1d9e0fd",
+        "x": 990,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "280aaf872bafe5e9",
+        "type": "function",
+        "z": "839a687ef61ecc3f",
+        "name": "Extract L3",
+        "func": "\nreturn {payload:msg.payload.emeters[2]}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 460,
+        "wires": [
+            [
+                "2930294d93e9be7d"
+            ]
+        ]
+    },
+    {
+        "id": "a986779728f2f0e6",
+        "type": "mqtt out",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "topic": "3em/total",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "1eb1ab4af1d9e0fd",
+        "x": 1000,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "8ffbd38645c71fa2",
+        "type": "function",
+        "z": "839a687ef61ecc3f",
+        "name": "Extract total",
+        "func": "const emeters = msg.payload['emeters']\n\nconst total = emeters[0]['total'] + emeters[1]['total'] + emeters[2]['total']\nconst total_returned = emeters[0]['total_returned'] + emeters[1]['total_returned'] + emeters[2]['total_returned']\n\nreturn {\n    payload: {\n        power: msg.payload['total_power'],\n        total,\n        total_returned\n    }\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 540,
+        "wires": [
+            [
+                "a986779728f2f0e6"
+            ]
+        ]
+    },
+    {
+        "id": "86fa6f4367498077",
+        "type": "function",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "func": "const emeters = msg.payload['emeters']\n\nconst l1Power = emeters[0]['power'];\nconst l2Power = emeters[1]['power'];\nconst l3Power = emeters[2]['power'];\nconst power = {\n    l1: l1Power,\n    l2: l2Power,\n    l3: l3Power\n}\n\nconst l1Energy = emeters[0]['total'];\nconst l2Energy = emeters[1]['total'];\nconst l3Energy = emeters[2]['total'];\nconst energy = {\n    l1 : l1Energy,\n    l2 : l2Energy,\n    l3 : l3Energy\n}\n\nconst voltage = {\n    l1 : emeters[0]['voltage'],\n    l2 : emeters[1]['voltage'],\n    l3 : emeters[2]['voltage']\n}\n\nconst current = {\n    l1 : emeters[0]['current'],\n    l2 : emeters[1]['current'],\n    l3 : emeters[2]['current']\n}\n\n\nconst today = new Date();\n\nconst currentDay = context.get('current-day') || 0;\nconst equalDay = currentDay===today.getDate();\n\nif(!equalDay){\n    context.set('current-day', today.getDate());\n    context.set('start-energy', energy);\n}\n\nconst todayStartEnergy = context.get('start-energy') || {l1:0, l2:0, l3:0};\n\nconst todayEnergy = {\n    l1: l1Energy -  todayStartEnergy.l1,\n    l2: l2Energy -  todayStartEnergy.l2,\n    l3: l3Energy -  todayStartEnergy.l3\n}\n\nconst thisPayload =  {\n    payload: {\n        power,\n        voltage,\n        current,\n        todayEnergy,\n    }\n}\n\nreturn thisPayload;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 640,
+        "wires": [
+            [
+                "609dbc42a3516115",
+                "289e398c27b8e7b6"
+            ]
+        ]
+    },
+    {
+        "id": "609dbc42a3516115",
+        "type": "debug",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "289e398c27b8e7b6",
+        "type": "mqtt out",
+        "z": "839a687ef61ecc3f",
+        "name": "",
+        "topic": "3em/debug",
+        "qos": "",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "1eb1ab4af1d9e0fd",
+        "x": 990,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "1eb1ab4af1d9e0fd",
+        "type": "mqtt-broker",
+        "name": "localhost",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "node-red",
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "sessionExpiry": ""
+    }
+]
