@@ -27,8 +27,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 StaticJsonDocument<256> doc;
 
 char temp1[16] = "";
-char temp2[16] = "";
-void drawTotal(const char* text, const char* pwr);
+void drawTotal(const char* text );
 void drawL1(const char* text);
 void drawL2(const char* text);
 void drawL3(const char* text);
@@ -37,11 +36,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   deserializeJson(doc, payload, length);
   if (strcmp(topic, "3em/total") == 0) {
     float p = doc["power"] | 0.0;
-    float w = doc["total_returned"] | 0.0;
-    // w=29991;
-    dtostrf(p, 6, 0, temp1);
-    dtostrf(w/1000, 6, 3, temp2);
-    drawTotal(temp1, temp2);
+    dtostrf(p, 5, 0, temp1);
+    drawTotal(temp1);
   }
   if (strcmp(topic, "3em/l1") == 0) {
     float p = doc["power"] | 0.0;
@@ -78,13 +74,10 @@ void reconnect() {
   }
 }
 
-void drawTotal(const char* text, const char* wrk) {
-  display.setTextSize(2);  
-  display.fillRect(0, 0, 128, 40, BLACK);
+void drawTotal(const char* text) {
+  display.setTextSize(3);  
+  display.fillRect(0, 0, 128, 30, BLACK);
   display.setCursor(0, 0);
-  display.print(wrk);
-  display.print(" kWh");
-  display.setCursor(0, 20);
   display.print(text);
   display.print(" W");
   display.display();
@@ -92,8 +85,8 @@ void drawTotal(const char* text, const char* wrk) {
 
 void drawL1(const char* text) {
   display.setTextSize(1);
-  display.fillRect(0, 40, 64, 10, BLACK);
-  display.setCursor(0, 40);
+  display.fillRect(0, 35, 64, 10, BLACK);
+  display.setCursor(0, 35);
   display.print("1:");
   display.print(text);
   display.print(" W");
@@ -101,8 +94,9 @@ void drawL1(const char* text) {
 }
 void drawL2(const char* text) {
   display.setTextSize(1);
-  display.fillRect(64, 40, 64, 10, BLACK);
-  display.setCursor(64, 40);
+    display.fillRect(10, 45, 64, 10, BLACK);
+  display.setCursor(0, 45);
+
   display.print("2:");
   display.print(text);
   display.print(" W");
@@ -110,8 +104,8 @@ void drawL2(const char* text) {
 }
 void drawL3(const char* text) {
   display.setTextSize(1);
-  display.fillRect(0, 50, 64, 10, BLACK);
-  display.setCursor(0, 50);
+  display.fillRect(0, 55, 64, 10, BLACK);
+  display.setCursor(0, 55);
   display.print("3:");
   display.print(text);
   display.print(" W");
