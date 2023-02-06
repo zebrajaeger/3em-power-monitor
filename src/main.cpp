@@ -1,14 +1,17 @@
-
-
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <Arduino.h>
-#include <ArduinoJson.h>
-#include <PubSubClient.h>
 #include <WiFi.h>
 #include <WiFiManager.h>
 #include <Wire.h>
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#include <ArduinoJson.h>
+
+#include <PubSubClient.h>
+
 #include <time.h>
+#include <esp_sntp.h>
 
 #include "multitimer.h"
 
@@ -23,21 +26,17 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 MultiTimer timer;
-StaticJsonDocument<256> doc;
+StaticJsonDocument<512> doc;
 int16_t currentDay = -1;
 float todayStartEnergy = 0;
 float todayEnergy = -1;
 bool dayswitch = true;
 char temp1[16] = "";
-// {"power":177.6,"total":368386.5,"total_returned":1869.1999999999998}
-// {"power":150.78,"pf":0.66,"current":1,"voltage":232.39,"is_valid":true,"total":225240.2,"total_returned":1135.1}
-// {"power":18.82,"pf":0.31,"current":0.26,"voltage":233.83,"is_valid":true,"total":70696.5,"total_returned":485.3}
-// {"power":1.98,"pf":0.06,"current":0.14,"voltage":233.24,"is_valid":true,"total":72449.8,"total_returned":248.8}
 
-void drawTotal(const char* text);
-void drawL1(const char* text);
-void drawL2(const char* text);
-void drawL3(const char* text);
+void drawPower(float p);
+void drawPowerL1(float p);
+void drawPowerL2(float p);
+void drawPowerL3(float p);
 void drawTime(struct tm* time);
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 void mqttReconnect();
@@ -46,26 +45,45 @@ void drawEnergy(float e);
 void setup() {
   Serial.begin(115200);
 
+  // Display
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
-    for (;;)
-      ;  // Don't proceed, loop forever
   } else {
     Serial.println(F("Display ok"));
     display.clearDisplay();
     display.setTextColor(WHITE);
+    display.display();
   }
 
+  // WiFi
+  display.setCursor(0,0);
+  display.print("Wifi...");
+  display.display();
   WiFiManager wifiManager;
   wifiManager.autoConnect("AutoConnectAP");
+  display.println("done");
+  display.display();
 
+  // MQTT
+  display.print("MQTT...");
+  display.display();
+  client.setBufferSize(512);
   client.setServer(mqtt_server, 1883);
   client.setCallback(mqttCallback);
+  display.println("done");
+  display.display();
 
-  configTime(0, 0, ntpServer);
-  setenv("TZ", timezone, 1);
-  tzset();
-  // printLocalTime();
+  // NTP
+  display.print("NTP...");
+  display.display();
+  configTzTime(timezone, ntpServer);
+  sntp_set_time_sync_notification_cb(
+      [](struct timeval* tv) { Serial.println("NTP-Sync"); });
+  sntp_set_sync_interval(1000 * 60 * 60);  // sync every 60min
+  display.println("done");
+  display.display();
+
+  // Interval timer
   timer.begin();
   timer.set("time", 1000, []() {
     struct tm timeinfo;
@@ -78,8 +96,8 @@ void setup() {
         dayswitch = true;
         currentDay = timeinfo.tm_yday;
         Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S zone %Z %z ");
-        drawTime(&timeinfo);
       }
+      drawTime(&timeinfo);
     }
   });
 
@@ -89,53 +107,58 @@ void setup() {
 
 void loop() {
   if (!client.connected()) {
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.display();
+    display.println("MQTT subscribing...");
     mqttReconnect();
+    display.clearDisplay();
+    display.display();
   }
   client.loop();
   timer.loop();
 }
 
-void drawTotal(const char* text) {
+void drawPower(float p) {
+  dtostrf(p, 5, 0, temp1);
   display.setTextSize(3);
   display.fillRect(0, 0, 128, 21, BLACK);
   display.setCursor(2, 0);
-  display.print(text);
+  display.print(temp1);
   display.print(" W");
-  display.display();
 }
 
-void drawL1(const char* text) {
-  uint8_t y = 64-33;
+void drawPowerL1(float p) {
+  uint8_t y = 64 - 33;
+  dtostrf(p, 5, 0, temp1);
   display.setTextSize(1);
   display.fillRect(0, y, 64, 10, BLACK);
   display.setCursor(0, y);
   display.print("L1:");
-  display.print(text);
+  display.print(temp1);
   display.print(" W");
-  display.display();
 }
 
-void drawL2(const char* text) {
-  uint8_t y = 64-20;
+void drawPowerL2(float p) {
+  uint8_t y = 64 - 20;
+  dtostrf(p, 5, 0, temp1);
   display.setTextSize(1);
   display.fillRect(0, y, 64, 10, BLACK);
   display.setCursor(0, y);
-
   display.print("L2:");
-  display.print(text);
+  display.print(temp1);
   display.print(" W");
-  display.display();
 }
 
-void drawL3(const char* text) {
-  uint8_t y = 64-7;
+void drawPowerL3(float p) {
+  uint8_t y = 64 - 7;
+  dtostrf(p, 5, 0, temp1);
   display.setTextSize(1);
   display.fillRect(0, y, 64, 7, BLACK);
   display.setCursor(0, y);
   display.print("L3:");
-  display.print(text);
+  display.print(temp1);
   display.print(" W");
-  display.display();
 }
 
 void drawEnergy(float e) {
@@ -143,10 +166,9 @@ void drawEnergy(float e) {
   uint8_t y = 30;
   display.setTextSize(1);
   display.fillRect(x, y, 64, 10, BLACK);
-  display.setCursor(x+64-(10*6), y);
-  display.printf("%6.3f", e/1000);
+  display.setCursor(x + 64 - (10 * 6), y);
+  display.printf("%6.3f", e / 1000);
   display.print(" kWh");
-  display.display();
 }
 
 void drawTime(struct tm* timeinfo) {
@@ -164,51 +186,36 @@ void drawTime(struct tm* timeinfo) {
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   deserializeJson(doc, payload, length);
-  if (strcmp(topic, "3em/total") == 0) {
-    float p = doc["power"] | 0.0;
-    float e = doc["total"] | 0.0;
-    if (dayswitch) {
-      todayStartEnergy = e;
-      dayswitch = false;
-    }
-      Serial.println(e);
+  JsonVariant energy = doc["todayEnergy"];
+  float e1 = energy["l1"];
+  float e2 = energy["l2"];
+  float e3 = energy["l3"];
+  float e = e1 + e2 + e3;
+  drawEnergy(e);
 
-    todayEnergy = e -= todayStartEnergy;
-    dtostrf(p, 5, 0, temp1);
-    drawTotal(temp1);
-    drawEnergy(todayEnergy);
-  }
-  if (strcmp(topic, "3em/l1") == 0) {
-    float p = doc["power"] | 0.0;
-    dtostrf(p, 5, 0, temp1);
-    drawL1(temp1);
-  }
-  if (strcmp(topic, "3em/l2") == 0) {
-    float p = doc["power"] | 0.0;
-    dtostrf(p, 5, 0, temp1);
-    drawL2(temp1);
-  }
-  if (strcmp(topic, "3em/l3") == 0) {
-    float p = doc["power"] | 0.0;
-    dtostrf(p, 5, 0, temp1);
-    drawL3(temp1);
-  }
+  JsonVariant power = doc["power"];
+  float p1 = power["l1"];
+  float p2 = power["l2"];
+  float p3 = power["l3"];
+  float p = p1 + p2 + p3;
+  drawPower(p);
+  drawPowerL1(p1);
+  drawPowerL2(p2);
+  drawPowerL3(p3);
+  display.display();
 }
 
 void mqttReconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("arduinoClient")) {
-      Serial.println("connected");
-      client.subscribe("3em/total");
-      client.subscribe("3em/l1");
-      client.subscribe("3em/l2");
-      client.subscribe("3em/l3");
+    if (client.connect("3EM Power Monitor")) {
+      client.subscribe("3em/display");
     } else {
-      Serial.print("failed, rc=");
+      Serial.print("failed: ");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.println(" -> try again in 5 seconds");
       delay(5000);
     }
   }
+  Serial.println("connected");
 }
